@@ -1,5 +1,5 @@
 <template>
-  <div v-if="loading" class="w-screen h-screen flex flex-col items-center justify-center bg-gray-200">
+  <div v-if="loading" class="w-screen h-screen flex flex-col items-center justify-center bg-gray-200 dark:bg-gray-900 text-gray-900 dark:text-white">
     <div class="text-center">
       <div role="status">
         <svg aria-hidden="true" class="inline w-12 h-12 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -11,12 +11,12 @@
     </div>
   </div>
 
-  <FullDashboard v-if="sent" />
+  <FullDashboard v-if="sent" :tweetsData="tweets" :username="usernameReceived" />
   <StartButton @user-sent="handleUserSent" v-if="!sent && !loading" />
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import StartButton from './StartButton.vue'
 import FullDashboard from './FullDashboard.vue'
 
@@ -42,8 +42,8 @@ const handleUserSent = async (username) => {
 
     const data = await response.json()
     tweets.value = data
-    console.log('API Response:', data)
     sent.value = true
+    console.log('Received tweet data:', tweets.value)
   } catch (error) {
     console.error('Error fetching data:', error)
   } finally {
@@ -52,7 +52,6 @@ const handleUserSent = async (username) => {
   }
 }
 
-// Function to animate "loading..." text
 const animateLoadingText = () => {
   const dots = ['', '.', '..', '...']
   let index = 0
@@ -62,7 +61,6 @@ const animateLoadingText = () => {
   }, 500)
 }
 
-// Clear interval when component unmounts
 onUnmounted(() => {
   clearInterval(loadingInterval)
 })
