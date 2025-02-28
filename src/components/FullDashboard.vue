@@ -27,7 +27,11 @@
         <canvas ref="lineChart"></canvas>
       </div>
     </div>
-
+ <!-- Bar Chart (Tweets per DistilBERT Sentiment) -->
+ <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col items-center">
+        <h2 class="text-xl font-semibold mb-4">Tweets per DistilBERT Sentiment</h2>
+        <canvas ref="distilbertChart"></canvas>
+      </div>
     <!-- Tweets Popup -->
     <TweetsContainer
       v-if="showingTweets"
@@ -35,6 +39,8 @@
       @close="showingTweets = false"
     />
   </div>
+
+
 </template>
 
 <script setup>
@@ -45,6 +51,7 @@ import Chart from 'chart.js/auto'
 const showingTweets = ref(false)
 const doughnutChart = ref(null)
 const lineChart = ref(null)
+const distilbertChart = ref(null)
 const filteredTweets = ref({})
 
 const props = defineProps({
@@ -170,4 +177,28 @@ onMounted(() => {
     })
   }
 })
-</script>
+onMounted(() => {
+  const distilbertCounts = {
+      joy: Object.values(props.tweetsData.distilbert_sentiment || {}).filter((s) => s === 'joy')
+        .length,
+      anger: Object.values(props.tweetsData.distilbert_sentiment || {}).filter((s) => s === 'anger')
+        .length,
+      fear: Object.values(props.tweetsData.distilbert_sentiment || {}).filter((s) => s === 'fear')
+        .length,
+    }
+
+    new Chart(distilbertChart.value, {
+      type: 'bar',
+      data: {
+        labels: ['Joy', 'Anger', 'Fear'],
+        datasets: [
+          {
+            label: 'DistilBERT Sentiments',
+            data: [distilbertCounts.joy, distilbertCounts.anger, distilbertCounts.fear],
+            backgroundColor: ['#10B981', '#EF4444', '#3B82F6'],
+          },
+        ],
+      },
+    })
+  })
+  </script>
