@@ -20,7 +20,12 @@
         <h2 class="text-xl font-semibold mb-4">Tweets per Sentiment</h2>
         <canvas ref="doughnutChart"></canvas>
       </div>
-      <!-- Other chart divs here -->
+
+      <!-- Bar Chart (Tweets per Hour) -->
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex flex-col items-center">
+        <h2 class="text-xl font-semibold mb-4">Tweets per Hour</h2>
+        <canvas ref="lineChart"></canvas>
+      </div>
     </div>
 
     <!-- Tweets Popup -->
@@ -39,6 +44,7 @@ import Chart from 'chart.js/auto'
 
 const showingTweets = ref(false)
 const doughnutChart = ref(null)
+const lineChart = ref(null)
 const filteredTweets = ref({})
 
 const props = defineProps({
@@ -54,6 +60,22 @@ const showAllTweets = () => {
 const showFilteredTweets = (sentiment) => {
   const filteredKeys = Object.keys(props.tweetsData.sentiment || {}).filter(
     (key) => props.tweetsData.sentiment[key] === sentiment,
+  )
+
+  filteredTweets.value = filteredKeys.reduce((acc, key) => {
+    Object.keys(props.tweetsData).forEach((field) => {
+      if (!acc[field]) acc[field] = {}
+      acc[field][key] = props.tweetsData[field][key]
+    })
+    return acc
+  }, {})
+
+  showingTweets.value = true
+}
+
+const showTweetsByHour = (hour) => {
+  const filteredKeys = Object.keys(props.tweetsData.date_time || {}).filter(
+    (key) => new Date(props.tweetsData.date_time[key]).getHours() === hour
   )
 
   filteredTweets.value = filteredKeys.reduce((acc, key) => {
@@ -88,7 +110,7 @@ onMounted(() => {
       `Negative (${((sentimentCounts.negative / totalTweets) * 100).toFixed(1)}%)`,
     ]
 
-    const chartInstance = new Chart(doughnutChart.value, {
+    new Chart(doughnutChart.value, {
       type: 'doughnut',
       data: {
         labels: labels,
@@ -106,6 +128,42 @@ onMounted(() => {
             const index = elements[0].index
             const sentimentTypes = ['positive', 'neutral', 'negative']
             showFilteredTweets(sentimentTypes[index])
+          }
+        },
+      },
+    })
+  }
+
+  if (lineChart.value) {
+    const tweetsByHour = Array(24).fill(0)
+    Object.values(props.tweetsData.date_time || {}).forEach((dateTime) => {
+      const hour = new Date(dateTime).getHours()
+      tweetsByHour[hour]++
+    })
+
+    new Chart(lineChart.value, {
+      type: 'line',
+      data: {
+        labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+        datasets: [
+          {
+            label: 'Number of Tweets',
+            data: tweetsByHour,
+            backgroundColor: '#3B82F6',
+            borderColor: '#2563EB',
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        scales: {
+          x: { title: { display: true, text: 'Hour of the Day' } },
+          y: { title: { display: true, text: 'Tweet Count' }, beginAtZero: true },
+        },
+        onClick: (event, elements) => {
+          if (elements.length > 0) {
+            const index = elements[0].index
+            showTweetsByHour(index)
           }
         },
       },
